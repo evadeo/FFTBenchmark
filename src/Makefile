@@ -1,7 +1,7 @@
 OBJS=fft.o
-CXXFLAGS=-O2 -Wall --pedantic
+CXXFLAGS=-g -std=c++17 -Wall --pedantic
 LDFLAGS=-lm
-
+CXX=clang++
 all: fft
 
 fft: $(OBJS)
