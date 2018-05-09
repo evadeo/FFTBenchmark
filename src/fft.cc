@@ -1,21 +1,23 @@
 #include <complex>
 #include <iostream>
+#include "timer.hh"
 
 #define M_PI 3.14159265358979323846
 
+
 // Separate even & odd elements
-void separate (std::complex<double>* a, int n) {
+void separate (std::complex<double>* a, size_t n) {
    std::complex<double>* b = new std::complex<double>[n/2];
    // FIXME: Merge the two loops
-   for (int i = 0; i < n/2; ++i)
+   for (size_t i = 0; i < n/2; ++i)
       b[i] = a[i*2 + 1];
-   for (int i = 0; i < n/2; ++i)
+   for (size_t i = 0; i < n/2; ++i)
       a[i] = a[i*2];
    std::move(b, b + n/2, a + n/2); //FIXME: Make it parallel
    delete[] b;
 }
 
-void difft2(std::complex<double>* arr, int n)
+void difft2(std::complex<double>* arr, size_t n)
 {
    if (n == 1)
       return;
@@ -23,7 +25,7 @@ void difft2(std::complex<double>* arr, int n)
    difft2(arr, n/2);
    difft2(arr + n/2, n/2);
 
-   for (int k = 0; k < n/2; ++k)
+   for (size_t k = 0; k < n/2; ++k)
    {
       std::complex<double> t = arr[k];
       auto x = std::exp(std::complex<double>(0, -2. * M_PI * k / n));
@@ -34,15 +36,40 @@ void difft2(std::complex<double>* arr, int n)
 
 
 int main() {
-   const int nSamples = 8;
-   std::complex<double> samples[nSamples] = {1.0,1.0,1.0,1.0,0.0,0.0,0.0,0.0};
-   //std::complex<double> result[nSamples];
+   const unsigned int nSamples = std::pow(2,22);
 
-   difft2(samples, nSamples);
+   std::complex<double> *x = (std::complex<double>*) malloc(sizeof (std::complex<double>) * nSamples);
+   std::complex<double> *X = (std::complex<double>*) malloc(sizeof (std::complex<double>) * nSamples);
+   if (!x || !X)
+   {
+      std::cout << "Malloc error, exiting" << std::endl;
+      return 1;
+   }
+   const int nFreqs = 5;
+   double freq[nFreqs] = { 2, 5, 11, 17, 29 }; // known freqs for testing
 
+   // generate samples for testing
+   for(size_t i=0; i<nSamples; i++) {
+      x[i] = std::complex<double>(0.,0.);
+      // sum several known sinusoids into x[]
+      for(int j=0; j<nFreqs; j++)
+	 x[i] += sin( 2*M_PI*freq[j]*i/nSamples );
+      X[i] = x[i];        // copy into X[] for FFT work & result
+   }
+   // compute fft for this data
+   double timer;
    std::cout << "fft" << std::endl;
-   for (int i = 0; i < 8; ++i)
-      std::cout << samples[i] << " ";
-   std::cout << std::endl;
+
+   {
+      auto timerC = scope_timer(timer);
+      difft2(X, nSamples);
+   }
+
+   std::cout << "----------------------" << std::endl;
+   std::cout << "Execution time: " << timer << std::endl;
+
+   /*for (int i = 0; i < 8; ++i)
+     std::cout << samples[i] << " ";*/
+   std::cout << std::endl << "----------------------" << std::endl;
    return 0;
 }
