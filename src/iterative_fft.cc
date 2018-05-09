@@ -35,30 +35,30 @@ std::valarray<std::complex<double> > bit_reverse_copy(std::valarray<std::complex
 }
 
 std::valarray<std::complex<double> > iterative_fft(std::valarray<std::complex<double> > input) {
-  unsigned int n = input.size();
-  std::valarray<std::complex<double> > rev_array = bit_reverse_copy(input, n);
+  unsigned int length = input.size();
+  std::valarray<std::complex<double> > rev_array = bit_reverse_copy(input, length);
 
-  std::valarray<std::complex<double> > omega (n / 2);
+  std::valarray<std::complex<double> > omega (length / 2);
 
-  omega[1] = std::polar(1., -2. * M_PI / n);
+  omega[1] = std::polar(1., -2. * M_PI / length);
   omega[0] = 1;
-  for (unsigned int i = 2; i < n / 2; ++i) {
+  for (unsigned int i = 2; i < length / 2; ++i) {
     omega[i] = std::pow(omega[1], i);
   }
   int en = 1;
-  int a = n / 2;
+  int a = length / 2;
 
-  for (int j = 0; j < my_log2(n); ++j) {
-    for (unsigned int k = 0; k < n; ++k) {
-      if (!(k & en)) {
-        std::complex<double> temp = rev_array[k];
-        std::complex<double> t = omega[(k * a) % (n * a)] * rev_array[k + en];
+  for (int j = 0; j < my_log2(length); ++j) {
+    for (unsigned int k = 0; k < length; ++k) {
+      if (!(k & n)) {
+        std::complex<double> firstTmp = rev_array[k];
+        std::complex<double> secondTmp = omega[(k * a) % (n * a)] * rev_array[k + n];
 
-        rev_array[k] = temp + t;
-        rev_array[k + en] = temp - t;
+        rev_array[k] = firstTmp + secondTmp;
+        rev_array[k + n] = firstTemp - secondTmp;
       }
     }
-    en *= 2;
+    n *= 2;
     a /= 2;
   }
 
@@ -68,7 +68,7 @@ std::valarray<std::complex<double> > iterative_fft(std::valarray<std::complex<do
 int main (int argc, char** argv) {
   const std::complex<double> test[] = { 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0 };
   std::valarray<std::complex<double> > data(test, 8);
-  std::cout << "go" << std::endl;
+
   // forward fft
   std::valarray<std::complex<double> > res = iterative_fft(data);
 
