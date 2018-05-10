@@ -9,10 +9,11 @@
 void separate (std::complex<double>* a, size_t n) {
    std::complex<double>* b = new std::complex<double>[n/2];
    // FIXME: Merge the two loops
-   for (size_t i = 0; i < n/2; ++i)
+   for (size_t i = 0; i < n/2; ++i) {
       b[i] = a[i*2 + 1];
-   for (size_t i = 0; i < n/2; ++i)
       a[i] = a[i*2];
+   }
+
    std::move(b, b + n/2, a + n/2); //FIXME: Make it parallel
    delete[] b;
 }
@@ -36,10 +37,10 @@ void difft2(std::complex<double>* arr, size_t n)
 
 
 int main() {
-   const unsigned int nSamples = std::pow(2,22);
+   const unsigned int nSamples = std::pow(2,23);
 
-   std::complex<double> *x = (std::complex<double>*) malloc(sizeof (std::complex<double>) * nSamples);
-   std::complex<double> *X = (std::complex<double>*) malloc(sizeof (std::complex<double>) * nSamples);
+   std::complex<double> *x = new std::complex<double>[nSamples];
+   std::complex<double> *X = new std::complex<double>[nSamples];
    if (!x || !X)
    {
       std::cout << "Malloc error, exiting" << std::endl;
@@ -71,5 +72,8 @@ int main() {
    /*for (int i = 0; i < 8; ++i)
      std::cout << samples[i] << " ";*/
    std::cout << std::endl << "----------------------" << std::endl;
+
+   delete[] x;
+   delete[] X;
    return 0;
 }
