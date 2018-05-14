@@ -1,5 +1,5 @@
-OBJS=recursive_fft.o
-CXXFLAGS=-Ofast -std=c++17 -Wall --pedantic
+OBJS=iterative_fft.o
+CXXFLAGS=-O2 -std=c++17 -Wall --pedantic
 LDFLAGS=-lm
 CXX=clang++
 all: fft
