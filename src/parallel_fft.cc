@@ -1,24 +1,30 @@
 #include <complex>
+#include <valarray>
+#include <tbb/task_group.h>
+
 
 // Separate even & odd elements
-void separate (std::complex<double>* a, size_t n) {
+void separate_parallel(std::complex<double>* a, size_t n) {
    std::complex<double>* b = new std::complex<double>[n/2];
    for (size_t i = 0; i < n/2; ++i) {
       b[i] = a[i*2 + 1];
       a[i] = a[i*2];
    }
 
-   std::move(b, b + n/2, a + n/2);
+   std::move(b, b + n/2, a + n/2); //FIXME: Make it parallel
    delete[] b;
 }
 
-void difft2(std::complex<double>* arr, size_t n)
+
+void difft2_parallel(std::complex<double>* arr, size_t n)
 {
    if (n == 1)
       return;
-   separate(arr, n);
-   difft2(arr, n/2);
-   difft2(arr + n/2, n/2);
+   tbb::task_group *sp_group = new tbb::task_group;
+   separate_parallel(arr, n);
+   sp_group->run([arr, n]{ difft2_parallel(arr, n/2); });
+   sp_group->run([arr, n]{ difft2_parallel(arr + n/2, n/2); });
+   sp_group->wait();
 
    for (size_t k = 0; k < n/2; ++k)
    {

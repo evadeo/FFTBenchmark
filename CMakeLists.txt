@@ -7,23 +7,28 @@ include_directories(${TBB_INCLUDE_DIRS})
 add_definitions(${TBB_DEFINITIONS})
 # include_directories(${Boost_INCLUDE_DIR})
 
+cmake_policy(SET CMP0042 NEW)
 set(PROJECT_NAME fft)
 set(${PROJECT_NAME} CXX)
 
 #CXX
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -Werror -std=c++17 -pedantic -Ofast")
-set(CMAKE_CXX_FLAGS_RELEASE "-Ofast")
+set(CMAKE_CXX_COMPILER "clang++")
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -Werror -std=c++17 -pedantic -g2")
+set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -DNDEBUG")
 
 #INCLUDE
 set(PROJECT_INCLUDE src/)
 
 include_directories(${PROJECT_INCLUDE})
+
 set(PROJECT_SRC_FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/iterative_fft.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/src/recursive_fft.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/parallel_fft.cc
 )
 
 add_library(_${PROJECT_NAME} SHARED ${PROJECT_SRC_FILES})
-add_executable(${PROJECT_NAME} ${PROJECT_SRC_FILES})
+add_executable(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cc)
 
 target_link_libraries(${PROJECT_NAME}
   _${PROJECT_NAME})
