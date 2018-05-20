@@ -7,13 +7,6 @@
 // Separate even & odd elements
 void separate_parallel(std::complex<double>* a, size_t n) {
    std::complex<double>* b = new std::complex<double>[n/2];
-   /*   tbb::parallel_for(tbb::blocked_range<size_t>(0, n/2),
-                     [&](const tbb::blocked_range<size_t>& r) {
-                       for (auto i = r.begin(); i < r.end(); ++i) {
-                         b[i] = a[i*2 + 1];
-                         a[i] = a[i*2];
-                       }
-                     });*/
    for (size_t i = 0; i < n/2; ++i) {
       b[i] = a[i*2 + 1];
       a[i] = a[i*2];

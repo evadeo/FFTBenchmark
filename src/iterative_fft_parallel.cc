@@ -32,15 +32,18 @@ std::valarray<std::complex<double> > iterative_fft_parallel(std::valarray<std::c
   int a = length / 2;
 
   for (int j = 0; j < my_log2(length); ++j) {
-    for (unsigned int k = 0; k < length; ++k) {
-      if (!(k & n)) {
-        std::complex<double> firstTmp = rev_array[k];
-        std::complex<double> secondTmp = omega[(k * a) % (n * a)] * rev_array[k + n];
+    tbb::parallel_for(tbb::blocked_range<unsigned int>(0, length),
+                      [&](const tbb::blocked_range<unsigned int>& r) {
+                        for (unsigned int k = r.begin(); k < r.end(); ++k) {
+                          if (!(k & n)) {
+                            std::complex<double> firstTmp = rev_array[k];
+                            std::complex<double> secondTmp = omega[(k * a) % (n * a)] * rev_array[k + n];
 
-        rev_array[k] = firstTmp + secondTmp;
-        rev_array[k + n] = firstTmp - secondTmp;
-      }
-    }
+                            rev_array[k] = firstTmp + secondTmp;
+                            rev_array[k + n] = firstTmp - secondTmp;
+                          }
+                        }
+                      });
     n *= 2;
     a /= 2;
   }

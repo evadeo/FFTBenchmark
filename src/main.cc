@@ -70,7 +70,11 @@ int main () {
    timer = 0;
    { // Iterative parallel fft
       auto timerC = scope_timer(timer);
+      auto tmp = output;
       output = iterative_fft_parallel(data);
+
+      if (!std::equal(std::begin(output), std::end(output), std::begin(tmp), std::end(tmp)))
+        std::cout << "invalid results for iterative parallel fft" << std::endl;
    }
    print_res("iterative_fft_parallel", timer);
 
