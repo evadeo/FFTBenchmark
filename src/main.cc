@@ -68,6 +68,13 @@ int main () {
    print_res("iterative_fft", timer);
 
    timer = 0;
+   { // Iterative parallel fft
+      auto timerC = scope_timer(timer);
+      output = iterative_fft_parallel(data);
+   }
+   print_res("iterative_fft_parallel", timer);
+
+   timer = 0;
    { // Recursive
       auto timerC = scope_timer(timer);
       difft2(Xrec, nSamples);
