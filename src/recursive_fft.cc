@@ -1,7 +1,10 @@
 #include <complex>
+#include <unordered_map>
+#include <iostream>
+
 
 // Separate even & odd elements
-void separate (std::complex<double>* a, size_t n) {
+static void separate (std::complex<double>* a, size_t n) {
    std::complex<double>* b = new std::complex<double>[n/2];
    for (size_t i = 0; i < n/2; ++i) {
       b[i] = a[i*2 + 1];
@@ -23,8 +26,8 @@ void difft2(std::complex<double>* arr, size_t n)
    for (size_t k = 0; k < n/2; ++k)
    {
       std::complex<double> t = arr[k];
-      auto x = std::exp(std::complex<double>(0, -2. * M_PI * k / n));
-      arr[k] = t + x * arr[k + n/2];
-      arr[k + n/2] = t - x * arr[k + n/2];
+      auto my_exp = std::exp(std::complex<double>(0, -2. * M_PI * k/n));
+      arr[k] = t + my_exp * arr[k + n/2];
+      arr[k + n/2] = t - my_exp * arr[k + n/2];
    }
 }
