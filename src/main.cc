@@ -77,6 +77,18 @@ int main () {
         std::cout << "invalid results for iterative parallel fft" << std::endl;
    }
    print_res("iterative_fft_parallel", timer);
+   
+   timer = 0;
+   { // Iterative parallel openmpfft
+      auto timerC = scope_timer(timer);
+      auto tmp = output;
+      output = iterative_openmp_fft(data);
+
+      if (!std::equal(std::begin(output), std::end(output), std::begin(tmp), std::end(tmp)))
+        std::cout << "invalid results for iterative parallel fft" << std::endl;
+   }
+   print_res("iterative_fft_openmp", timer);
+
 
    timer = 0;
    { // Recursive

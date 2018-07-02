@@ -13,7 +13,11 @@ set(${PROJECT_NAME} CXX)
 
 #CXX
 set(CMAKE_CXX_COMPILER "clang++")
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -Werror -std=c++14 -pedantic -Ofast")
+
+#MAC OS SETTINGS
+#set(CMAKE_CXX_COMPILER "g++-8")
+
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -Werror -std=c++14 -fopenmp -pedantic -Ofast")
 set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -DNDEBUG")
 
 #INCLUDE
@@ -24,6 +28,7 @@ include_directories(${PROJECT_INCLUDE})
 set(PROJECT_SRC_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/iterative_fft.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/src/iterative_fft_parallel.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/iterative_fft_openmp.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/src/recursive_fft.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/src/parallel_fft.cc
 )
