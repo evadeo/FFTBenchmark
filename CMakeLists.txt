@@ -29,6 +29,7 @@ set(PROJECT_SRC_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/iterative_fft.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/src/iterative_fft_parallel.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/src/iterative_fft_openmp.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/stockham_openmp.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/src/recursive_fft.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/src/parallel_fft.cc
 )

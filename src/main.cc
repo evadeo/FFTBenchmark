@@ -88,8 +88,7 @@ int main () {
         std::cout << "invalid results for iterative parallel fft" << std::endl;
    }
    print_res("iterative_fft_openmp", timer);
-
-
+   
    timer = 0;
    { // Recursive
       auto timerC = scope_timer(timer);
@@ -127,6 +126,13 @@ int main () {
 	    std::cout << output[i] << "\t" << XparRec[i] << '\t' << c.real() << '\t' << c.imag() << std::endl;
       }
    }
+   timer = 0;
+   { // Stockham openmp FFT
+   	auto timerC = scope_timer(timer);
+	stockham_openmp_fft(XparRec, nSamples);
+   }
+   print_res("stockham openmp", timer);
+
 /*
    for (unsigned int i = 0; i < 15; ++i)
       std::cout << output[i] << '\n';
