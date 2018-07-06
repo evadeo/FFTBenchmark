@@ -56,7 +56,8 @@ bool complex_close(std::complex<double> a, std::complex<double> b)
 }
 
 int main () {
-   const int power = 19;
+   int nRepeat = 1;
+   const int power = 23;
    const unsigned int nSamples = std::pow(2, power);
    std::complex<double> *X = generate_data(nSamples);
    if (!X)
@@ -74,137 +75,175 @@ int main () {
    double timer;
    bool silent = true;
 
+   double timer_cufft = 0;
+   double timer_stockham = 0;
+   double timer_iterative = 0;
+   double timer_recursive = 0;
+   double timer_iterative_parallel = 0;
+   double timer_fftw = 0;
+
+   for (int rep = 0; rep < nRepeat; rep++)
    {
-      timer = 0;
-      { // Recursive AVX
+      {
+	 timer = 0;
+	 {
+	    auto timerC = scope_timer(timer);
+	    cufft_example(XparRec, nSamples);
+	 }
+	 print_res("cuFFT", timer);
+	 timer_cufft += timer;
+      }
+
+      /* DOUBLE FREE PROBLEM
+	 {
+	 timer = 0;
+	 { // Recursive AVX
 	 auto timerC = scope_timer(timer);
 	 difft2_avx(Xrec, nSamples);
-      }
-      if (std::equal(std::begin(output),
-		     std::end(output),
-		     Xrec,
-		     complex_close))
+	 }
+	 if (std::equal(std::begin(output),
+	 std::end(output),
+	 Xrec,
+	 complex_close))
 	 print_res("recursive_fft AVX", timer);
-      else {
+	 else {
 	 std::cout << "Invalid recursive fft AVX" << std::endl;
 	 print_res("recursive_fft AVX", timer);
 	 if (!silent)
 	 {
-	    for (unsigned int i = 0; i < nSamples; ++i) {
-	       auto c = output[i] - Xrec[i];
-	       if ((std::abs(c.real()) > 0.001) || (std::abs(c.imag()) > 0.001))
-		  std::cout << output[i] << "\t" << Xrec[i] << '\t' << c.real() << '\t' << c.imag() << std::endl;
-	    }
+	 for (unsigned int i = 0; i < nSamples; ++i) {
+	 auto c = output[i] - Xrec[i];
+	 if ((std::abs(c.real()) > 0.001) || (std::abs(c.imag()) > 0.001))
+	 std::cout << output[i] << "\t" << Xrec[i] << '\t' << c.real() << '\t' << c.imag() << std::endl;
+	 }
+	 }
+	 }
+	 }
+      */
+
+      {
+	 timer = 0;
+	 { // Stockham FFT
+	    auto timerC = scope_timer(timer);
+	    stockham_fft(XparRec, nSamples);
+	 }
+	 timer_stockham += timer / (double)nRepeat;
+	 print_res("stockham", timer);
+      }
+
+      {
+	 timer = 0;
+	 { // Stockham FFT AVX
+	    auto timerC = scope_timer(timer);
+	    stockham_fft_avx(XparRec, nSamples);
+	 }
+	 print_res("stockham AVX", timer);
+      }
+
+
+      {
+	 { // Iterative fft
+	    auto timerC = scope_timer(timer);
+	    output = iterative_fft(data);
+	 }
+	 timer_iterative += timer / (double)nRepeat;
+	 print_res("iterative_fft", timer);
+      }
+
+      {
+	 timer = 0;
+	 { // Iterative parallel fft
+	    auto timerC = scope_timer(timer);
+	    auto tmp = output;
+	    output = iterative_fft_parallel(data);
+
+	    if (!std::equal(std::begin(output), std::end(output), std::begin(tmp), std::end(tmp)))
+	       std::cout << "invalid results for iterative parallel fft" << std::endl;
+	 }
+	 timer_iterative_parallel += timer / (double)nRepeat;
+	 print_res("iterative_fft_parallel", timer);
+      }
+
+
+
+      {
+	 timer = 0;
+	 { // Recursive
+	    auto timerC = scope_timer(timer);
+	    difft2(Xrec, nSamples);
+	 }
+	 timer_recursive += timer / (double)nRepeat;
+	 if (std::equal(std::begin(output),
+			std::end(output),
+			Xrec,
+			complex_close))
+	    print_res("recursive_fft", timer);
+	 else {
+	    std::cout << "Invalid recursive fft" << std::endl;
+	    print_res("recursive_fft", timer);
+	    if (!silent)
+	       for (unsigned int i = 0; i < nSamples; ++i) {
+		  auto c = output[i] - Xrec[i];
+		  if ((std::abs(c.real()) > 0.001) || (std::abs(c.imag()) > 0.001))
+		     std::cout << output[i] << "\t" << Xrec[i]
+			       << '\t' << c.real() << '\t' << c.imag() << std::endl;
+	       }
 	 }
       }
-   }
 
-   {
-      double *a_h = new double[nSamples];
-      for (size_t i = 0; i < nSamples; ++i)
-	 a_h[i] = i;
-      timer = 0;
       {
-	 auto timerC = scope_timer(timer);
-	 do_square(a_h, nSamples);
+	 timer = 0;
+	 { // Recursive parallel
+	    auto timerC = scope_timer(timer);
+	    difft2_parallel(XparRec, nSamples);
+	 }
+	 //timer_iterative_parallel += timer / (double)nRepeat;
+	 if (std::equal(std::begin(output),
+			std::end(output),
+			XparRec,
+			complex_close))
+	    print_res("Parallel Recursive FFT", timer);
+	 else {
+	    std::cout << "Invalid parallel recursive fft" << std::endl;
+	    if (!silent)
+	       for (unsigned int i = 0; i < nSamples; ++i) {
+		  auto c = output[i] - XparRec[i];
+		  if ((std::abs(c.real()) > 0.0001) || (std::abs(c.imag()) > 0.0001))
+		     std::cout << output[i] << "\t" << XparRec[i] << '\t' << c.real()
+			       << '\t' << c.imag() << std::endl;
+	       }
+	 }
       }
-      print_res("Do squares", timer);
-   }
 
-   {
-      timer = 0;
-      { // Stockham FFT
-	 auto timerC = scope_timer(timer);
-	 stockham_fft(XparRec, nSamples);
+
+      {
+	 timer = 0;
+	 { // FFTW
+	    auto timerC = scope_timer(timer);
+	    fftwBench(XparRec, nSamples);
+	 }
+	 timer_fftw += timer / (double)nRepeat;
+	 print_res("FFTW", timer);
       }
-      print_res("stockham", timer);
-   }
 
-   {
-      { // Iterative fft
-	 auto timerC = scope_timer(timer);
-	 output = iterative_fft(data);
-      }
-      print_res("iterative_fft", timer);
-   }
-
-   {
-      timer = 0;
-      { // Iterative parallel fft
-	 auto timerC = scope_timer(timer);
-	 auto tmp = output;
-	 output = iterative_fft_parallel(data);
-
-	 if (!std::equal(std::begin(output), std::end(output), std::begin(tmp), std::end(tmp)))
-	    std::cout << "invalid results for iterative parallel fft" << std::endl;
-      }
-      print_res("iterative_fft_parallel", timer);
-   }
-
-   {
-      timer = 0;
-      { // Recursive
-	 auto timerC = scope_timer(timer);
-	 difft2(Xrec, nSamples);
-      }
-      if (std::equal(std::begin(output),
-		     std::end(output),
-		     Xrec,
-		     complex_close))
-	 print_res("recursive_fft", timer);
-      else {
-	 std::cout << "Invalid recursive fft" << std::endl;
-	 print_res("recursive_fft", timer);
-	 if (!silent)
-	    for (unsigned int i = 0; i < nSamples; ++i) {
-	       auto c = output[i] - Xrec[i];
-	       if ((std::abs(c.real()) > 0.001) || (std::abs(c.imag()) > 0.001))
-		  std::cout << output[i] << "\t" << Xrec[i]
-			    << '\t' << c.real() << '\t' << c.imag() << std::endl;
-	    }
+      {
+	 timer = 0;
+	 { // FFTW Parallel
+	    auto timerC = scope_timer(timer);
+	    fftwBenchParr(XparRec, nSamples);
+	 }
+	 print_res("FFTW Parallel", timer);
       }
    }
 
-
+   if (nRepeat > 1)
    {
-      timer = 0;
-      { // Recursive parallel
-	 auto timerC = scope_timer(timer);
-	 difft2_parallel(XparRec, nSamples);
-      }
-      if (std::equal(std::begin(output),
-		     std::end(output),
-		     XparRec,
-		     complex_close))
-	 print_res("Parallel Recursive FFT", timer);
-      else {
-	 std::cout << "Invalid parallel recursive fft" << std::endl;
-	 if (!silent)
-	    for (unsigned int i = 0; i < nSamples; ++i) {
-	       auto c = output[i] - XparRec[i];
-	       if ((std::abs(c.real()) > 0.0001) || (std::abs(c.imag()) > 0.0001))
-		  std::cout << output[i] << "\t" << XparRec[i] << '\t' << c.real()
-			    << '\t' << c.imag() << std::endl;
-	    }
-      }
-   }
-
-   {
-      timer = 0;
-      { // FFTW
-	 auto timerC = scope_timer(timer);
-	 fftwBench(XparRec, nSamples);
-      }
-      print_res("FFTW", timer);
-   }
-
-   {
-      timer = 0;
-      { // FFTW Parallel
-	 auto timerC = scope_timer(timer);
-	 fftwBenchParr(XparRec, nSamples);
-      }
-      print_res("FFTW Parallel", timer);
+      print_res("cuFFT - final", timer_cufft / nRepeat);
+      print_res("stockham - final", timer_stockham);
+      print_res("iterative - final", timer_iterative);
+      print_res("iterative_parallel - final", timer_iterative_parallel);
+      print_res("recursive - final", timer_recursive);
+      print_res("fftw - final", timer_fftw);
    }
 
    delete[] X;

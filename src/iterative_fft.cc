@@ -1,6 +1,10 @@
 #include <complex>
 #include <valarray>
 #include <tbb/tbb.h>
+//#include <omp.h> // OpenMP
+#include <stdlib.h>
+#include <immintrin.h>
+#include <xmmintrin.h>
 
 int my_log2(int N) {
   int k = N;
@@ -26,7 +30,7 @@ unsigned int reverse(int N, int n) {
 }
 
 std::valarray<std::complex<double> > bit_reverse_copy(std::valarray<std::complex<double> > input, unsigned int length) {
-  std::valarray<std::complex<double> > res (length);
+  std::valarray<std::complex<double>> res(length);
 
   for (unsigned int i = 0; i < length; ++i) {
     res[reverse(length, i)] = input[i];
