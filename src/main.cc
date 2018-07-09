@@ -45,7 +45,7 @@ bool complex_close(std::complex<double> a, std::complex<double> b)
 }
 
 int main () {
-   const int power = 23;
+   const int power = 19;
    const unsigned int nSamples = std::pow(2, power);
    std::complex<double> *X = generate_data(nSamples);
    if (!X)
@@ -61,82 +61,90 @@ int main () {
    std::valarray<std::complex<double>> data(X, nSamples);
    std::valarray<std::complex<double>> output;
    double timer;
-   { // Iterative fft
-      auto timerC = scope_timer(timer);
-      output = iterative_fft(data);
-   }
-   print_res("iterative_fft", timer);
 
-   timer = 0;
-   { // Iterative parallel fft
-      auto timerC = scope_timer(timer);
-      auto tmp = output;
-      output = iterative_fft_parallel(data);
 
-      if (!std::equal(std::begin(output), std::end(output), std::begin(tmp), std::end(tmp)))
-        std::cout << "invalid results for iterative parallel fft" << std::endl;
+   {
+      { // Iterative fft
+	 auto timerC = scope_timer(timer);
+	 output = iterative_fft(data);
+      }
+      print_res("iterative_fft", timer);
    }
-   print_res("iterative_fft_parallel", timer);
-   
-   timer = 0;
-   { // Iterative parallel openmpfft
-      auto timerC = scope_timer(timer);
-      auto tmp = output;
-      output = iterative_openmp_fft(data);
 
-      if (!std::equal(std::begin(output), std::end(output), std::begin(tmp), std::end(tmp)))
-        std::cout << "invalid results for iterative parallel fft" << std::endl;
+   {
+      timer = 0;
+      { // Iterative parallel fft
+	 auto timerC = scope_timer(timer);
+	 auto tmp = output;
+	 output = iterative_fft_parallel(data);
+      }
+      print_res("iterative_fft_tbb", timer);
    }
-   print_res("iterative_fft_openmp", timer);
-   
-   timer = 0;
-   { // Recursive
-      auto timerC = scope_timer(timer);
-      difft2(Xrec, nSamples);
+
+   {
+      timer = 0;
+      { // Iterative parallel openmpfft
+	 auto timerC = scope_timer(timer);
+	 auto tmp = output;
+	 output = iterative_openmp_fft(data);
+      }
+      print_res("iterative_fft_openmp", timer);
    }
-   if (std::equal(std::begin(output),
-		  std::end(output),
-		  Xrec,
-		  complex_close))
+
+   {
+      timer = 0;
+      { // Recursive
+	 auto timerC = scope_timer(timer);
+	 difft2(Xrec, nSamples);
+      }
       print_res("recursive_fft", timer);
-   else {
-      std::cout << "Invalid recursive fft" << std::endl;
-      for (unsigned int i = 0; i < nSamples; ++i) {
-	 auto c = output[i] - Xrec[i];
-	 if ((std::abs(c.real()) > 0.001) || (std::abs(c.imag()) > 0.001))
-	    std::cout << output[i] << "\t" << Xrec[i] << '\t' << c.real() << '\t' << c.imag() << std::endl;
-      }
    }
 
-   timer = 0;
-   { // Recursive parallel
-      auto timerC = scope_timer(timer);
-      difft2_parallel(XparRec, nSamples);
-   }
-   if (std::equal(std::begin(output),
-		  std::end(output),
-		  XparRec,
-		  complex_close))
-      print_res("Parallel Recursive FFT", timer);
-   else {
-      std::cout << "Invalid parallel recursive fft" << std::endl;
-      for (unsigned int i = 0; i < nSamples; ++i) {
-	 auto c = output[i] - XparRec[i];
-	 if ((std::abs(c.real()) > 0.0001) || (std::abs(c.imag()) > 0.0001))
-	    std::cout << output[i] << "\t" << XparRec[i] << '\t' << c.real() << '\t' << c.imag() << std::endl;
+   {
+      timer = 0;
+      { // Recursive parallel
+	 auto timerC = scope_timer(timer);
+	 difft2_parallel(XparRec, nSamples);
       }
+      print_res("Parallel Recursive FFT TBB", timer);
    }
-   timer = 0;
-   { // Stockham openmp FFT
-   	auto timerC = scope_timer(timer);
-	stockham_openmp_fft(XparRec, nSamples);
-   }
-   print_res("stockham openmp", timer);
 
-/*
-   for (unsigned int i = 0; i < 15; ++i)
-      std::cout << output[i] << '\n';
-*/
+   {
+      timer = 0;
+      { // Stockham FFT
+	 auto timerC = scope_timer(timer);
+	 stockham_fft(XparRec, nSamples);
+      }
+      print_res("stockham", timer);
+   }
+
+   {
+      timer = 0;
+      { // Stockham openmp FFT
+	 auto timerC = scope_timer(timer);
+	 stockham_openmp_fft(XparRec, nSamples);
+      }
+      print_res("stockham openmp", timer);
+   }
+
+   {
+      timer = 0;
+      { // FFTW
+	 auto timerC = scope_timer(timer);
+	 fftwBench(XparRec, nSamples);
+      }
+      print_res("FFTW", timer);
+   }
+
+   {
+      timer = 0;
+      {
+	 auto timerC = scope_timer(timer);
+	 cufft_example(XparRec, nSamples);
+      }
+      print_res("cuFFT", timer);
+   }
+
    delete[] X;
    delete[] Xrec;
    delete[] XparRec;
